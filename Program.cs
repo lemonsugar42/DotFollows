@@ -22,46 +22,55 @@ namespace WindowsFormsApp1
 
 namespace ExcelApp
 {
-    class ExcelApp
+    public class Excel
     {
-        public static Microsoft.Office.Interop.Excel.Application NewApp()
+        private static Microsoft.Office.Interop.Excel.Application excelApp;
+        public static Microsoft.Office.Interop.Excel.Application ExcelApp()
         {
-            Microsoft.Office.Interop.Excel.Application excelApp = new Microsoft.Office.Interop.Excel.Application();
+            excelApp = new Microsoft.Office.Interop.Excel.Application();
             if (excelApp == null) throw new Exception("Excel is not installed");
-            return excelApp;
-        }
-        public static void Update(Microsoft.Office.Interop.Excel.Application excelApp, string text)
-        {
-            bool first; // по-хорошему весь блок трай-кэтч надо вынести в bool-метод opening
-            try // а еще место сейва другое, поближе к проекту
+            else
             {
-                excelApp.Workbooks.Open(@"C:\Users\79080\Documents\Книга1.xlsx", Editable: true);
+                //excelApp.DisplayAlerts = false;
+                return excelApp;
+            }
+        }
+        private static bool Launch()
+        {
+            bool first;
+            string curdir = Environment.CurrentDirectory;
+            try
+            {
+                excelApp.Workbooks.Open($@"{curdir}\..\..\Database\Records.xlsx", Editable: true);
                 first = false;
             }
             catch
             {
+                Directory.CreateDirectory($@"{curdir}\..\..\Database");
                 excelApp.Workbooks.Add();
-                excelApp.ActiveWorkbook.SaveAs(@"C:\Users\79080\Documents\Книга1.xlsx");
+                excelApp.ActiveWorkbook.SaveAs($@"{curdir}\..\..\Database\Records.xlsx");
                 first = true;
             }
+            return first;
+        }
+        private static void Sort(Worksheet excelSheet, int rows)
+        {
+            Range records = excelSheet.Range[excelSheet.Cells[1, 1], excelSheet.Cells[rows, 3]];
+            records.Sort(records.Columns[3], XlSortOrder.xlDescending, records.Columns[1], Type.Missing, XlSortOrder.xlAscending);
+        }
+        public static void Update(string name, string score)
+        {
+            bool first = Launch();
             Worksheet excelSheet = excelApp.ActiveWorkbook.Sheets[1];
-            Range excelRange = excelSheet.UsedRange;
-            int rows = excelRange.Rows.Count;
-            int id;
-            if (first)
+            int id = 1;
+            if (!first)
             {
-                id = 1;
-            }
-            else
-            {
-                for (id = 1; id < rows; id++)
-                {
-                    if (excelSheet.Cells[id, 1] == null) break;
-                }
-                id++;
+                id = excelSheet.UsedRange.Rows.Count + 1;
             }
             excelSheet.Cells[id, 1] = id;
-            excelSheet.Cells[id, 2] = text;
+            excelSheet.Cells[id, 2] = name;
+            excelSheet.Cells[id, 3] = score;
+            Sort(excelSheet, id);
             excelApp.ActiveWorkbook.Save();
             excelApp.Visible = true;
             //excelApp.ActiveWorkbook.Close();

@@ -15,28 +15,34 @@ namespace WindowsFormsApp1
 {
     public partial class Form1 : Form
     {
-        PaintedDot dot;
-        Bitmap bmp;
-        System.Drawing.Point _point;
-        Microsoft.Office.Interop.Excel.Application excelApp;
+        private PaintedDot dot;
+        private Bitmap bmp;
+        private System.Drawing.Point _point;
+        private Microsoft.Office.Interop.Excel.Application excelApp;
         public Form1()
         {
             InitializeComponent();
-            dot = new PaintedDot(new GraphicsPath(), Pens.Red, Brushes.Red);
-            dot.Path.AddEllipse(System.Drawing.Rectangle.FromLTRB(20, 20, 27, 27));
+            dot = new PaintedDot();
             bmp = new Bitmap(this.ClientSize.Width, this.ClientSize.Height);
-            _point.X = 20;
-            _point.Y = 20;
-            RefreshBitmap();
+            InitDot();
             this.DoubleBuffered = true;
-            //this.MouseLeave += PictureBox1_MouseLeave;
-            //this.MouseCaptureChanged += PictureBox1_MouseLeave;
-            this.MouseMove += PictureBox1_MouseMove;
-            this.Paint += PictureBox1_Paint;
-            excelApp = ExcelApp.ExcelApp.NewApp();
+            pictureBox1.MouseEnter += PictureBox1_MouseEnter;
+            pictureBox1.MouseMove += PictureBox1_MouseMove;
+            pictureBox1.MouseLeave += PictureBox1_MouseLeave;
+            pictureBox1.Paint += PictureBox1_Paint;
+            excelApp = Excel.ExcelApp();
         }
-
-        void RefreshBitmap()
+        private void InitDot()
+        {
+            dot.MyPen = Pens.Transparent;
+            dot.MyBrush = Brushes.Transparent;
+            dot.Path = new GraphicsPath();
+            dot.Path.AddEllipse(System.Drawing.Rectangle.FromLTRB(0, 0, 7, 7));
+            _point.X = 0;
+            _point.Y = 0;
+            RefreshBitmap();
+        }
+        private void RefreshBitmap()
         {
             if (bmp != null) bmp.Dispose();
             bmp = new Bitmap(this.ClientSize.Width, this.ClientSize.Height);
@@ -46,30 +52,12 @@ namespace WindowsFormsApp1
                 g.FillPath(dot.MyBrush, dot.Path);
             }
         }
-        void PictureBox1_MouseEnter(object sender, EventArgs e)
+        private void PictureBox1_MouseEnter(object sender, EventArgs e)
         {
-            int deltaX, deltaY;
-            deltaX = MousePosition.X - _point.X;
-            deltaY = MousePosition.Y - _point.Y;
-            dot.Path.Transform(new Matrix(1, 0, 0, 1, deltaX, deltaY));
-            RefreshBitmap();
-            _point.X = MousePosition.X;
-            _point.Y = MousePosition.Y;
+            dot.MyPen = Pens.Red;
+            dot.MyBrush = Brushes.Red;
         }
-
-        //void PictureBox1_MouseLeave(object sender, EventArgs e)
-        //{
-        //    using (Graphics g = Graphics.FromImage(bmp)) g.Clear(Color.Green);
-        //}
-
-        private void PictureBox1_Paint(object sender, PaintEventArgs e)
-        {
-            if (bmp == null) return;
-            RefreshBitmap();
-            e.Graphics.DrawImage(bmp, 0, 0);
-        }
-
-        void PictureBox1_MouseMove(object sender, MouseEventArgs e)
+        private void PictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
             int deltaX, deltaY;
             deltaX = e.Location.X - _point.X;
@@ -78,10 +66,21 @@ namespace WindowsFormsApp1
             _point = e.Location;
             this.Refresh();
         }
-
+        private void PictureBox1_MouseLeave(object sender, EventArgs e)
+        {
+            dot.Path.Reset();
+            this.Refresh();
+            InitDot();
+        }
+        private void PictureBox1_Paint(object sender, PaintEventArgs e)
+        {
+            if (bmp == null) return;
+            RefreshBitmap();
+            e.Graphics.DrawImage(bmp, 0, 0);
+        }
         private void Button1_Click(object sender, EventArgs e)
         {
-            ExcelApp.ExcelApp.Update(excelApp, TextBox1.Text);
+            Excel.Update(TextBox1.Text, ListBox1.Text);
             Button1.Text = "Done";
         }
     }
@@ -106,11 +105,11 @@ namespace WindowsFormsApp1
             get { return brush; }
             set { brush = value; }
         }
-        public PaintedDot(GraphicsPath path, Pen pen, Brush brush)
-        {
-            this.path = path;
-            this.pen = pen;
-            this.brush = brush;
-        }
+        //public PaintedDot(GraphicsPath path, Pen pen, Brush brush)
+        //{
+        //    this.path = path;
+        //    this.pen = pen;
+        //    this.brush = brush;
+        //}
     }
 }
